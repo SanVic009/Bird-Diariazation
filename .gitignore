@@ -28,7 +28,11 @@ venv.bak/
 *.wav
 *.pth
 *.log
+*.pt
+
+dataset/
 
 train_features/
 train_features2/
 train_features3/
+outputs/
