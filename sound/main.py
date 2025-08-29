@@ -3,7 +3,6 @@ import os
 import sys
 import argparse
 import logging
-import time
 from datetime import datetime
 
 logging.basicConfig(
