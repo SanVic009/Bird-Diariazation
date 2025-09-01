@@ -37,7 +37,7 @@ train_features/
 train_features2/
 train_features3/
 outputs/
-
+logs/
 
 # Specific file:
 prompt
