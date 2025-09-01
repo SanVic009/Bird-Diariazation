@@ -30,9 +30,14 @@ venv.bak/
 *.log
 *.pt
 
-dataset/
-
+birdclef-2024/
+processed/
+checkpoints_*/
 train_features/
 train_features2/
 train_features3/
 outputs/
+
+
+# Specific file:
+prompt
