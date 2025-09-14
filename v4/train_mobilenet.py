@@ -39,7 +39,7 @@ class EarlyStopping:
             if self.counter >= self.patience:
                 self.early_stop = True
 
-def train_one_epoch(model, loader, criterion, optimizer, device, scaler=None, grad_clip=1.0):
+def train_one_epoch(model, loader, criterion, optimizer, device, scaler=None, grad_clip=1.0, multi_label=False, threshold=0.5):
     model.train()
     running_loss, correct, total = 0.0, 0, 0
     all_preds, all_labels = [], []
@@ -51,8 +51,31 @@ def train_one_epoch(model, loader, criterion, optimizer, device, scaler=None, gr
 
         optimizer.zero_grad(set_to_none=True)
         with torch.amp.autocast(device_type=device, enabled=(scaler is not None)):
+            # Always get raw logits for loss calculation
+            model.multi_label = False  # Get raw logits
             outputs = model(xb)
-            loss = criterion(outputs, yb)
+            
+            if multi_label:
+                loss = criterion(outputs, yb.float())  # BCEWithLogitsLoss expects float targets
+            else:
+                # For single-class, convert to multi-hot format for BCEWithLogitsLoss
+                yb_onehot = torch.zeros(yb.size(0), outputs.size(1), device=device)
+                yb_onehot.scatter_(1, yb.unsqueeze(1), 1.0)
+                loss = criterion(outputs, yb_onehot)
+                
+            # Always get predictions using sigmoid + threshold
+            probs = torch.sigmoid(outputs)
+            preds = (probs > threshold).float()
+            
+            if multi_label:
+                # For multi-label accuracy: exact match (all labels must be correct)
+                target = yb.float()
+                correct += (preds == target).all(dim=1).sum().item()
+            else:
+                # For single-class: convert target to multi-hot for comparison
+                target_onehot = torch.zeros(yb.size(0), outputs.size(1), device=device)
+                target_onehot.scatter_(1, yb.unsqueeze(1), 1.0)
+                correct += (preds == target_onehot).all(dim=1).sum().item()
 
         if scaler:
             scaler.scale(loss).backward()
@@ -66,19 +89,27 @@ def train_one_epoch(model, loader, criterion, optimizer, device, scaler=None, gr
             optimizer.step()
 
         running_loss += loss.item() * xb.size(0)
-        preds = outputs.argmax(dim=1)
-        correct += (preds == yb).sum().item()
         total += yb.size(0)
 
+        # Store the appropriate target format
+        if multi_label:
+            target_for_storage = yb.float()
+        else:
+            target_for_storage = torch.zeros(yb.size(0), outputs.size(1), device=device)
+            target_for_storage.scatter_(1, yb.unsqueeze(1), 1.0)
+
         all_preds.extend(preds.cpu().numpy())
-        all_labels.extend(yb.cpu().numpy())
+        all_labels.extend(target_for_storage.cpu().numpy())
 
     avg_loss = running_loss / total
     acc = correct / total
-    f1 = f1_score(all_labels, all_preds, average="macro")
+    
+    # Since predictions are now always multi-hot arrays, use appropriate F1 calculation
+    f1 = f1_score(all_labels, all_preds, average="macro", zero_division=0)
+        
     return avg_loss, acc, f1
 
-def validate(model, loader, criterion, device):
+def validate(model, loader, criterion, device, multi_label=False, threshold=0.5):
     model.eval()
     running_loss, correct, total = 0.0, 0, 0
     all_preds, all_labels = [], []
@@ -88,38 +119,60 @@ def validate(model, loader, criterion, device):
             if xb is None:
                 continue
             xb, yb = xb.to(device), yb.to(device)
-            outputs = model(xb)
-            loss = criterion(outputs, yb)
-
+            
+            # Always get raw logits for loss calculation
+            model.multi_label = False  # Get raw logits
+            logits = model(xb)
+            
+            if multi_label:
+                loss = criterion(logits, yb.float())  # BCEWithLogitsLoss expects float targets
+                target = yb.float()
+            else:
+                # For single-class, convert to multi-hot format for BCEWithLogitsLoss
+                yb_onehot = torch.zeros(yb.size(0), logits.size(1), device=device)
+                yb_onehot.scatter_(1, yb.unsqueeze(1), 1.0)
+                loss = criterion(logits, yb_onehot)
+                target = yb_onehot
+                
+            # Always get predictions using sigmoid + threshold
+            probs = torch.sigmoid(logits)
+            preds = (probs > threshold).float()
+            
+            # For accuracy: exact match (all labels must be correct)
+            correct += (preds == target).all(dim=1).sum().item()
+                
             running_loss += loss.item() * xb.size(0)
-            preds = outputs.argmax(dim=1)
-            correct += (preds == yb).sum().item()
             total += yb.size(0)
 
             all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(yb.cpu().numpy())
+            all_labels.extend(target.cpu().numpy())
 
     avg_loss = running_loss / total
     acc = correct / total
-    f1 = f1_score(all_labels, all_preds, average="macro")
+    
+    # Since predictions are now always multi-hot arrays, use appropriate F1 calculation
+    f1 = f1_score(all_labels, all_preds, average="macro", zero_division=0)
+        
     return avg_loss, acc, f1, all_labels, all_preds
 
 def train_mobilenet(train_loader, val_loader, n_classes, device="cuda",
                patience=10, lr=1e-3, weight_decay=1e-4,
-               scheduler_type="cosine", max_epochs=50, save_dir="checkpoints_mobilenet"):
+               scheduler_type="cosine", max_epochs=50, save_dir="checkpoints_mobilenet", multi_label=False):
 
     global train_losses, val_losses, train_accuracies, val_accuracies
 
     # Log model type and training start
-    logger.info(f"Starting MobileNet training with {n_classes} classes")
+    mode = "multi-label" if multi_label else "multi-class"
+    logger.info(f"Starting MobileNet training ({mode}) with {n_classes} classes")
     logger.info(f"Training parameters: epochs={max_epochs}, lr={lr}, device={device}")
 
     # Generate a timestamp for unique filenames
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    model = MobileNetBird(n_classes=n_classes).to(device)
+    model = MobileNetBird(n_classes=n_classes, multi_label=multi_label).to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    # Use BCEWithLogitsLoss for all MobileNet training
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scaler = torch.amp.GradScaler(enabled=(device.startswith("cuda")))
 
@@ -140,8 +193,8 @@ def train_mobilenet(train_loader, val_loader, n_classes, device="cuda",
         print(f"Epoch {epoch+1}/{max_epochs}")
         logger.info(f"Epoch {epoch+1}/{max_epochs}")
 
-        train_loss, train_acc, train_f1 = train_one_epoch(model, train_loader, criterion, optimizer, device, scaler)
-        val_loss, val_acc, val_f1, all_labels, all_preds = validate(model, val_loader, criterion, device)
+        train_loss, train_acc, train_f1 = train_one_epoch(model, train_loader, criterion, optimizer, device, scaler, multi_label=multi_label)
+        val_loss, val_acc, val_f1, all_labels, all_preds = validate(model, val_loader, criterion, device, multi_label)
 
         if scheduler_type == "plateau":
             scheduler.step(val_loss)
@@ -202,7 +255,17 @@ def train_mobilenet(train_loader, val_loader, n_classes, device="cuda",
     plt.close()
 
     # Confusion Matrix
-    cm = confusion_matrix(all_labels, all_preds)
-    np.save(os.path.join(save_dir, f"confusion_matrix_{timestamp}.npy"), cm)
+    if not multi_label:
+        logger.info("Generating confusion matrix for single-label classification.")
+        # Convert multi-hot encoded labels/preds to class indices for confusion matrix
+        true_labels_cm = np.argmax(all_labels, axis=1)
+        pred_labels_cm = np.argmax(all_preds, axis=1)
+        cm = confusion_matrix(true_labels_cm, pred_labels_cm)
+        np.save(os.path.join(save_dir, f"confusion_matrix_{timestamp}.npy"), cm)
+    else:
+        logger.info("Skipping confusion matrix generation for multi-label classification.")
+        np.save(os.path.join(save_dir, f"multilabel_gts_{timestamp}.npy"), all_labels)
+        np.save(os.path.join(save_dir, f"multilabel_preds_{timestamp}.npy"), all_preds)
+
 
     return model

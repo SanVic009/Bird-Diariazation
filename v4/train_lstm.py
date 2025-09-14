@@ -127,7 +127,7 @@ def train_lstm(train_loader, val_loader, n_classes, device="cuda",
     all_unique_labels = train_loader.dataset.dataset.unique_labels # Get all unique labels from the full dataset
     train_indices = train_loader.dataset.indices
     train_df = full_df.iloc[train_indices]
-    train_labels = train_df['primary_label']
+    train_labels = train_df['species_id'].astype(str)
     
     # Compute weights for all possible classes, even if not present in train_labels
     # This will return weights for all classes in all_unique_labels

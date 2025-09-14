@@ -2,18 +2,22 @@ import argparse
 import torch
 import random
 import numpy as np
-from dataset import create_dataloaders
-from train_lstm import train_lstm
-from train_rf import train_rf
-from train_resnet import train_resnet
-from train_resnet_gru import train_resnet_gru
-from train_mobilenet import train_mobilenet
-from train_mobilenet_gru import train_mobilenet_gru
-from train_efficientnet import train_efficientnet
 import logging
 import sys
 import os
 from datetime import datetime
+
+# Add v4 directory to Python path to import training modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'v4')))
+
+from dataset import create_dataloaders
+from v4.train_lstm import train_lstm
+from v4.train_rf import train_rf
+from v4.train_resnet import train_resnet
+from v4.train_resnet_gru import train_resnet_gru
+from v4.train_mobilenet import train_mobilenet
+from v4.train_mobilenet_gru import train_mobilenet_gru
+from v4.train_efficientnet import train_efficientnet
 
 # Create a logger
 logger = logging.getLogger()
@@ -53,7 +57,7 @@ def set_seed(seed=42):
 def parse_args():
     parser = argparse.ArgumentParser(description="Bird Audio Classification Pipeline")
 
-    parser.add_argument("--processed_csv", type=str, default="processed/metadata.csv",
+    parser.add_argument("--processed_csv", type=str, default="processed_rfcx/metadata.csv",
                         help="Path to the pre-processed metadata CSV")
     parser.add_argument("--model_type", type=str, choices=["lstm", "rf", "resnet", "gru", "mobilenet", "mobilenet_gru", "efficientnet"], default="lstm",
                         help="Which model to train: 'lstm', 'rf', 'resnet', 'gru', 'mobilenet', 'mobilenet_gru', or 'efficientnet'")

@@ -12,19 +12,19 @@ class BirdClefDataset(Dataset):
             metadata_csv_file (str): Path to the metadata CSV file.
             audio_dir (str): Path to the audio directory. If None, inferred from metadata.
             transform (callable, optional): Optional transform to be applied on a sample.
-            use_processed (bool): If True, expects processed .npy files, else raw .ogg files
+            use_processed (bool): If True, expects processed .npy files, else raw .flac files
         """
         self.df = pd.read_csv(metadata_csv_file)
         self.use_processed = use_processed
         self.transform = transform
         
         if use_processed:
-            # For processed data (with comma-separated labels)
+            # For processed data (RFCX)
             self.audio_files = self.df['filepath'].values
-            self.labels = self.df['primary_label'].values
-            # Extract individual species from comma-separated combinations
+            self.labels = self.df['species_id'].values
+            # Extract individual species from comma-separated combinations (for compatibility)
             all_species = set()
-            for label_str in self.df["primary_label"]:
+            for label_str in self.df["species_id"]:
                 if isinstance(label_str, str) and ',' in label_str:
                     species = [s.strip() for s in label_str.split(',')]
                     all_species.update(species)
@@ -35,14 +35,14 @@ class BirdClefDataset(Dataset):
             # For original BirdCLEF data
             if audio_dir is None:
                 # Infer audio directory from metadata file path
-                audio_dir = os.path.join(os.path.dirname(metadata_csv_file), 'train_audio')
+                audio_dir = os.path.join(os.path.dirname(metadata_csv_file), 'train')
             
             self.audio_dir = audio_dir
-            self.labels = self.df['primary_label'].values
+            self.labels = self.df['species_id'].values
             # Build full audio file paths
-            self.audio_files = [os.path.join(audio_dir, filename) for filename in self.df['filename'].values]
+            self.audio_files = [os.path.join(audio_dir, f"{filename}.flac") for filename in self.df['recording_id'].values]
             # Simple species extraction
-            self.unique_labels = sorted(self.df['primary_label'].unique())
+            self.unique_labels = sorted(self.df['species_id'].unique())
         
         self.label2idx = {l: i for i, l in enumerate(self.unique_labels)}
         self.n_classes = len(self.unique_labels)
@@ -72,13 +72,13 @@ class BirdClefDataset(Dataset):
                 spectrogram = np.load(audio_path)
                 spectrogram = torch.from_numpy(spectrogram).float()
             else:
-                # Load and process raw audio (.ogg file)
+                # Load and process raw audio (.flac file)
                 import librosa
                 # Load audio file
-                audio, sr = librosa.load(audio_path, sr=16000)
+                audio, sr = librosa.load(audio_path, sr=32000)
                 # Create mel spectrogram
                 mel_spec = librosa.feature.melspectrogram(
-                    y=audio, sr=sr, n_mels=128, fmax=8000
+                    y=audio, sr=sr, n_mels=128, fmax=16000
                 )
                 # Convert to log scale
                 spectrogram = torch.from_numpy(librosa.power_to_db(mel_spec)).float()
@@ -123,9 +123,9 @@ def pad_collate_fn(batch):
     
     return mels, labels
 
-def create_dataloaders(metadata_csv_file='birdclef-2024/train_metadata.csv', audio_dir='birdclef-2024/train_audio', 
+def create_dataloaders(metadata_csv_file, audio_dir=None, 
                       batch_size=64, num_workers=4, split=0.8, transform=None, use_processed=False, **kwargs):
-    """Creates train/val loaders from BirdCLEF dataset."""
+    """Creates train/val loaders from the dataset."""
     full_ds = BirdClefDataset(metadata_csv_file, audio_dir=audio_dir, transform=transform, use_processed=use_processed)
     n_train = int(len(full_ds) * split)
     n_val = len(full_ds) - n_train

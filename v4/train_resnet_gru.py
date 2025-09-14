@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import f1_score, confusion_matrix
 from tqdm import tqdm
-from v4.resnet_gru import ResNetGRUBird
+from resnet_gru import ResNetGRUBird
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime

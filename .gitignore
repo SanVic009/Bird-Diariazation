@@ -40,7 +40,12 @@ train_features2/
 train_features3/
 outputs/
 logs/
+
+# Pre processed dirs
 processed2*/
+processed3/
+rfcx-species-audio-detection/
+processed_rfcx/
 
 # Specific file:
 prompt
