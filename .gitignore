@@ -30,6 +30,8 @@ venv.bak/
 *.log
 *.pt
 
+# Dirs
+train_audio/
 birdclef-2024/
 processed/
 checkpoints_*/
@@ -38,6 +40,7 @@ train_features2/
 train_features3/
 outputs/
 logs/
+processed2*/
 
 # Specific file:
 prompt
