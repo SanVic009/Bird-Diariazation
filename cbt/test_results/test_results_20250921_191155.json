@@ -1,0 +1,105 @@
+{
+  "Model Architecture": [
+    {
+      "test": "ImprovedDiarizationEncoder",
+      "status": "PASS",
+      "details": "Output shape: torch.Size([4, 256]), normalized: True"
+    },
+    {
+      "test": "LegacyDiarizationEncoder",
+      "status": "PASS",
+      "details": "Backward compatibility maintained"
+    },
+    {
+      "test": "Parameter Count Comparison",
+      "status": "PASS",
+      "details": "Improved: 21,564,345, Legacy: 21,284,537, Ratio: 1.0x"
+    }
+  ],
+  "Data Augmentation": [
+    {
+      "test": "AdvancedAudioAugmenter",
+      "status": "FAIL",
+      "details": "Augmentation had no effect"
+    },
+    {
+      "test": "ImprovedDiarizationDataset",
+      "status": "FAIL",
+      "details": "module 'torch' has no attribute 'uniform'"
+    }
+  ],
+  "Loss Functions": [
+    {
+      "test": "basic_loss",
+      "status": "FAIL",
+      "details": "element 0 of tensors does not require grad and does not have a grad_fn"
+    },
+    {
+      "test": "advanced_loss",
+      "status": "FAIL",
+      "details": "element 0 of tensors does not require grad and does not have a grad_fn"
+    },
+    {
+      "test": "focal_loss",
+      "status": "FAIL",
+      "details": "element 0 of tensors does not require grad and does not have a grad_fn"
+    },
+    {
+      "test": "infonct_loss",
+      "status": "FAIL",
+      "details": "element 0 of tensors does not require grad and does not have a grad_fn"
+    }
+  ],
+  "Clustering Algorithms": [
+    {
+      "test": "Clustering Algorithms",
+      "status": "FAIL",
+      "details": "operands could not be broadcast together with shapes (30,128) (2,) "
+    }
+  ],
+  "Validation Framework": [
+    {
+      "test": "Metrics Computation",
+      "status": "PASS",
+      "details": "Computed 11 metrics successfully"
+    },
+    {
+      "test": "Method Comparison",
+      "status": "PASS",
+      "details": "Compared 3 methods successfully"
+    }
+  ],
+  "Training Pipeline": [
+    {
+      "test": "Configuration",
+      "status": "PASS",
+      "details": "All 7 required keys present"
+    },
+    {
+      "test": "Trainer Initialization",
+      "status": "PASS",
+      "details": "Trainer and model setup successful"
+    }
+  ],
+  "Integration": [
+    {
+      "test": "End-to-End Pipeline",
+      "status": "PASS",
+      "details": "Processed 10 samples, detected 1 speakers"
+    }
+  ],
+  "Performance Benchmarks": [
+    {
+      "component": "ImprovedDiarizationEncoder",
+      "metric": "Inference Speed",
+      "value": "39.8 samples/sec",
+      "raw_value": 39.75111400888007
+    },
+    {
+      "component": "Advanced Clustering",
+      "metric": "Processing Speed",
+      "value": "20.6 samples/sec",
+      "raw_value": 20.59586329610052
+    }
+  ]
+}

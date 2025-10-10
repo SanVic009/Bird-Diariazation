@@ -1,0 +1,72 @@
+{
+  "n_speakers": 3,
+  "labels": [
+    0,
+    0,
+    0,
+    0,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "method": "ensemble",
+  "metrics": {
+    "silhouette_score": 0.0803297907114029,
+    "calinski_harabasz_score": 3.389228582382202,
+    "davies_bouldin_score": 3.0179419377755043,
+    "n_clusters": 3,
+    "cluster_sizes": [
+      10,
+      5,
+      6
+    ],
+    "min_cluster_size": 5,
+    "max_cluster_size": 10,
+    "cluster_balance": 0.3086066999241838
+  },
+  "timeline": [
+    {
+      "speaker": "Bird_0",
+      "start": 0.0,
+      "end": 8.0,
+      "duration": 8.0
+    },
+    {
+      "speaker": "Bird_3",
+      "start": 8.0,
+      "end": 20.0,
+      "duration": 12.0
+    },
+    {
+      "speaker": "Bird_1",
+      "start": 20.0,
+      "end": 30.0,
+      "duration": 10.0
+    },
+    {
+      "speaker": "Bird_0",
+      "start": 30.0,
+      "end": 42.0,
+      "duration": 12.0
+    }
+  ],
+  "timestamp": "2025-09-21T23:47:23.321348",
+  "input_file": "../birdclef-2024/train_audio/bkskit1/XC350262.ogg",
+  "duration": 42.42285714285714,
+  "n_segments": 21,
+  "segment_length": 2.0
+}

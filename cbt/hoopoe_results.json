@@ -1,0 +1,78 @@
+{
+  "n_speakers": 2,
+  "labels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "method": "ensemble",
+  "metrics": {
+    "silhouette_score": 0.6558589935302734,
+    "calinski_harabasz_score": 67.72064208984375,
+    "davies_bouldin_score": 0.39938489571154456,
+    "n_clusters": 2,
+    "cluster_sizes": [
+      33,
+      7
+    ],
+    "min_cluster_size": 7,
+    "max_cluster_size": 33,
+    "cluster_balance": 0.65
+  },
+  "timeline": [
+    {
+      "speaker": "Bird_0",
+      "start": 0.0,
+      "end": 66.0,
+      "duration": 66.0
+    },
+    {
+      "speaker": "Bird_1",
+      "start": 66.0,
+      "end": 80.0,
+      "duration": 14.0
+    }
+  ],
+  "timestamp": "2025-09-21T23:47:06.251794",
+  "input_file": "../birdclef-2024/train_audio/hoopoe/XC278154.ogg",
+  "duration": 80.71841269841269,
+  "n_segments": 40,
+  "segment_length": 2.0
+}
